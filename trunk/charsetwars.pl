@@ -11,11 +11,16 @@
 #   /charsetwars_help
 
 # TODO:
+# - change references for $channel to $target where it makes sense
+# - verify 'out' conversions
 # - numerate lists, and allow references to the indexes
 # - separate enemies list for guesses and user entered (?)
 # - use Perl's Encode ($ man 3perl Encode) (?)
 #
 # CHANGES:
+# * 2004-02-14:
+#   - corrected bug calling guess_wrong_charset() for out messages
+#
 # * 2004-02-10:
 #   - 0.69.1
 #   - removed hardcoded iso8859-1 accented characters from %guesses initialization (they got messed up by the editor using utf-8)
@@ -41,7 +46,7 @@ use Text::Iconv;
 use Data::Dumper;
 
 
-$VERSION = '0.69.1';
+$VERSION = '0.69.X';
 %IRSSI = (
     authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
     contact	=> 'spuk@ig.com.br',
@@ -415,7 +420,7 @@ sub convert_txt {
     my $txt_ret = $iconv->convert($txt);
 
     if (!$txt_ret
-        or (Irssi::settings_get_bool('charsetwars_wrong_guess') && guess_wrong_charset($charset, $txt))) {
+        or $in_out =~ 'in' && (Irssi::settings_get_bool('charsetwars_wrong_guess') && guess_wrong_charset($charset, $txt))) {
         Irssi::print("[charsetwars.pl:convert_txt()] Conversion error ($in_out, $charset, $txt, $nick, $channel, $ircnet)");
         if (Irssi::settings_get_bool('charsetwars_rm_on_err')) {
             if ($enemies{$ircnet}{$nick}) {
@@ -509,6 +514,14 @@ sub message_irc_action {
     Irssi::signal_continue($server, $msg, $nick, $addr, $target);
 }
 Irssi::signal_add('message irc action', 'message_irc_action');
+
+sub message_irc_own_action {
+    my ($server, $msg, $target) = @_;
+
+    $msg = convert_in($msg, $target, $server->{'chatnet'});
+    Irssi::signal_continue($server, $msg, $target);
+}
+Irssi::signal_add('message irc own_action', 'message_irc_own_action');
 
 sub message_private {
     my ($server, $msg, $nick, $addr) = @_;
