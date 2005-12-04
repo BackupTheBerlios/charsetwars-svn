@@ -13,8 +13,11 @@
 # TODO:
 # - separate enemies list for guesses and user entered
 #
-# BUGS:
-# - doesn't detect when someone detected using iso8859 goes using utf-8 (because iconv doesn't give a conversion error)
+# CHANGES:
+# * 2004-02-09:
+#   - 0.68.0
+#   - added guess_wrong_charset() (detect wrong setting of enemy charset)
+#   - started this "changelog"
 
 
 
@@ -27,15 +30,15 @@ use Text::Iconv;
 use Data::Dumper;
 
 
-$VERSION = '0.67.4';
+$VERSION = '0.68.0';
 %IRSSI = (
-    authors	=> 'spuk, with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
+    authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
     contact	=> 'spuk@ig.com.br',
     name	=> 'charsetwars',
     description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) charset guessing (right now only utf8 <-> iso8859-1).',
     license	=> 'Public Domain',
     url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
-    changed	=> '2003-12-14',
+    changed	=> '2004-02-09',
 );
 
 
@@ -52,6 +55,8 @@ Irssi::settings_add_str("charsetwars.pl", "charsetwars_default_out", "AS_IS");
 Irssi::settings_add_str("charsetwars.pl", "charsetwars_own", "iso8859-1");
 # Guessing of incoming message charset
 Irssi::settings_add_bool("charsetwars.pl", "charsetwars_guess_in", 1);
+# Guessing of wrong charset in messages
+Irssi::settings_add_bool("charsetwars.pl", "charsetwars_wrong_guess", 1);
 # Persistent guesses
 Irssi::settings_add_bool("charsetwars.pl", "charsetwars_guess_ln", 1);
 # Remove wrong guesses (a conversion for which an error has ocurred)
@@ -77,7 +82,7 @@ our %guesses = ();
 # iso8859-1(����� == utf-8(á|é|í|ó|ú|ã|ç|à|ô|ê)
 $guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
 # inverse of above (note they are the iso8859-1 char codes, as we'll get them, erroneous in utf8)
-$guesses{'utf-8'}{'iso8859-1'} = "����|�����;
+$guesses{'utf-8'}{'iso8859-1'} = "����|�����";
 
 
 # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
@@ -114,13 +119,14 @@ Usage:
 
 Settings (and default values):
   charsetwars_autobury (ON)        - auto-save links (when Irssi saves settings)
-  charsetwars_own (iso8859-1)      - your charset (this can't be autodetected)
+  charsetwars_own (iso8859-1)      - your charset (this can\'t be autodetected)
   charsetwars_convert_in (ON)      - convert incoming messages
   charsetwars_convert_out (OFF)    - convert outgoing messages
   charsetwars_guess_in (ON)        - try to guess charset of incoming messages
-  charsetwars_guess_ln (OFF)       - do charsetwars_ln on guesses
-  charsetwars_default_in (AS_IS)   - default 'in' charset (AS_IS == no conversion)
-  charsetwars_default_out (AS_IS)  - default 'out' charset (AS_IS == no conversion)
+  charsetwars_wrong_guess (ON)     - try to detect wrong charset in messages (like one using UTF-8 but set as ISO8859-1)
+  charsetwars_guess_ln (ON)        - do charsetwars_ln on guesses
+  charsetwars_default_in (AS_IS)   - default \'in\' charset (AS_IS == no conversion)
+  charsetwars_default_out (AS_IS)  - default \'out\' charset (AS_IS == no conversion)
   charsetwars_rm_on_err (ON)       - do charsetwars_rm on conversion error
 ";
 
@@ -239,7 +245,7 @@ revive_enemies();
 sub invalidate_iconv_caches {
     %iconv_cache_in = ();
     %iconv_cache_out = ();
-    $own_charset = Irssi::settings_get_str('charsetwars0_own');
+    $own_charset = Irssi::settings_get_str('charsetwars_own');
 }
 
 
@@ -248,6 +254,18 @@ sub guess_charset {
 
     foreach my $charset (keys %{ $guesses{$own_charset} }) {
         if ($txt =~ /$guesses{$own_charset}{$charset}/) {
+            return $charset;
+        }
+    }
+    return undef;
+}
+
+
+sub guess_wrong_charset {
+    my ($in_charset, $txt) = @_;
+
+    foreach my $charset (keys %{ $guesses{$in_charset} }) {
+        if ($txt =~ /$guesses{$in_charset}{$charset}/) {
             return $charset;
         }
     }
@@ -301,7 +319,6 @@ sub convert_txt {
     }
 
     my $iconv = $cache{$charset};
-
     if (!$iconv) {
         if ($in_out =~ 'in') {
             $iconv = Text::Iconv->new($charset, $own_charset);
@@ -309,15 +326,15 @@ sub convert_txt {
         elsif ($in_out =~ 'out') {
             $iconv = Text::Iconv->new($own_charset, $charset);
         }
+        $iconv->raise_error(0);
         $cache{$charset} = $iconv;
     }
 
     my $txt_ret = $iconv->convert($txt);
 
-    if ($txt_ret) {
-        return $txt_ret;
-    } else {
-        Irssi::print("[charsetwars.pl:convert_txt()] Text::Iconv error ($in_out, $charset, $txt, $nick, $channel, $ircnet)");
+    if (!$txt_ret
+        or (Irssi::settings_get_bool('charsetwars_wrong_guess') && guess_wrong_charset($charset, $txt))) {
+        Irssi::print("[charsetwars.pl:convert_txt()] Conversion error ($in_out, $charset, $txt, $nick, $channel, $ircnet)");
         if (Irssi::settings_get_bool('charsetwars_rm_on_err')) {
             if ($enemies{$ircnet}{$nick}) {
                 cmd_charsetwars_rm($nick,$ircnet);
@@ -330,6 +347,8 @@ sub convert_txt {
             }
         }
         return $txt;
+    } else {
+        return $txt_ret;
     }
 }
 
