@@ -3,14 +3,18 @@
 #
 # Comments/bugs/improvements/suggestions welcome.
 #
-# Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
-#
 # Requires Text::Iconv (Debian's libtext-iconv-perl). According to Zrajm C
 # Akfohg, on Gentoo you also need to install Data::Dumper (Gentoo's
 # "dev-perl/Data-Dumper" and "dev-perl/Text-Iconv", then).
 #
 # Usage:
 #   /charsetwars_help
+#
+# Simplest use case:
+#   /script load charsetwars.pl
+#   /set charsetwars_own utf-8
+#
+# Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 
 # TODO:
 # - change references for $channel to $target where it makes sense
@@ -52,7 +56,7 @@ Irssi::settings_add_bool("charsetwars.pl", "charsetwars_convert_out", 0);
 Irssi::settings_add_str("charsetwars.pl", "charsetwars_default_in", "AS_IS");
 Irssi::settings_add_str("charsetwars.pl", "charsetwars_default_out", "AS_IS");
 # The charset you're using
-Irssi::settings_add_str("charsetwars.pl", "charsetwars_own", "iso8859-1");
+Irssi::settings_add_str("charsetwars.pl", "charsetwars_term", "iso8859-1");
 # Guessing of incoming message charset
 Irssi::settings_add_bool("charsetwars.pl", "charsetwars_guess_in", 1);
 # Guessing of wrong charset in messages
@@ -96,7 +100,7 @@ our %iconv_cache_out = ();
 
 
 # Keep track of change
-our $own_charset = Irssi::settings_get_str('charsetwars_own');
+our $own_charset = Irssi::settings_get_str('charsetwars_term');
 
 
 # filename for saving list of enemies
@@ -122,13 +126,13 @@ Usage:
 
      * any of NICK/CHANNEL IRCNET can be '*'
     ** IRCNET defaults to '*'
-   *** THIS defaults to charsetwars_own
+   *** THIS defaults to charsetwars_term
   **** CHARS is a regexp that should match characters you commonly see from people using CHARSET
        (i.e., like some non-ASCII characteres, each separated by |)
 
 Settings (and default values):
   charsetwars_autobury (ON)        - auto-save links (when Irssi saves settings)
-  charsetwars_own (iso8859-1)      - your charset (this can\'t be autodetected)
+  charsetwars_term (iso8859-1)     - your charset (this can\'t be autodetected)
   charsetwars_convert_in (ON)      - convert incoming messages
   charsetwars_convert_out (OFF)    - convert outgoing messages
   charsetwars_guess_in (ON)        - try to guess charset of incoming messages
@@ -147,7 +151,7 @@ Irssi::command_bind('charsetwars_help', 'cmd_charsetwars_help', 'charsetwars.pl'
 sub cmd_guess_show {
     my ($this,) = split(/ +/, $_[0]);
 
-    $this = Irssi::settings_get_str('charsetwars_own') if (!$this);
+    $this = Irssi::settings_get_str('charsetwars_term') if (!$this);
 
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_head', $this);
     foreach my $charset (keys %{ $guesses{$this} }) {
@@ -161,7 +165,7 @@ Irssi::command_bind('charsetwars_guess_show', 'cmd_guess_show', 'charsetwars.pl'
 
 sub cmd_guess_add {
     my ($charset, $chars) = split(/ +/, $_[0]);
-    my $own_charset = Irssi::settings_get_str('charsetwars_own');
+    my $own_charset = Irssi::settings_get_str('charsetwars_term');
 
     if (!$charset || !$chars) {
         Irssi::print('[charsetwars.pl] Missing arguments. See /charsetwars_help for usage.', MSGLEVEL_CLIENTCRAP);
@@ -177,7 +181,7 @@ Irssi::command_bind('charsetwars_guess_add', 'cmd_guess_add', 'charsetwars.pl');
 
 sub cmd_guess_del {
     my ($charset) = split(/ +/, $_[0]);
-    my $own_charset = Irssi::settings_get_str('charsetwars_own');
+    my $own_charset = Irssi::settings_get_str('charsetwars_term');
 
     if (!$charset) {
         Irssi::print('[charsetwars.pl] Missing arguments. See /charsetwars_help for usage.', MSGLEVEL_CLIENTCRAP);
@@ -316,7 +320,7 @@ load_guesses();
 sub invalidate_iconv_caches {
     %iconv_cache_in = ();
     %iconv_cache_out = ();
-    $own_charset = Irssi::settings_get_str('charsetwars_own');
+    $own_charset = Irssi::settings_get_str('charsetwars_term');
 }
 
 
@@ -439,8 +443,8 @@ sub convert_in {
         return $txt;
     }
 
-    # user changed 'charsetwars_own', invalidate caches
-    if ($own_charset !~ Irssi::settings_get_str('charsetwars_own')) { invalidate_iconv_caches(); }
+    # user changed 'charsetwars_term', invalidate caches
+    if ($own_charset !~ Irssi::settings_get_str('charsetwars_term')) { invalidate_iconv_caches(); }
 
     return convert_txt('in', $in_charset, $txt, $nick, $channel, $ircnet);
 }
@@ -456,8 +460,8 @@ sub convert_out {
         return $txt;
     }
 
-    # user changed 'charsetwars_own', invalidate caches
-    if ($own_charset != Irssi::settings_get_str('charsetwars_own')) { invalidate_iconv_caches(); }
+    # user changed 'charsetwars_term', invalidate caches
+    if ($own_charset != Irssi::settings_get_str('charsetwars_term')) { invalidate_iconv_caches(); }
 
     return convert_txt('out', $out_charset, $txt, $nick, $channel, $ircnet);
 }
