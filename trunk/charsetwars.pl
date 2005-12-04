@@ -11,9 +11,15 @@
 #   /charsetwars_help
 
 # TODO:
-# - separate enemies list for guesses and user entered
+# - numerate lists, and allow references to the indexes
+# - separate enemies list for guesses and user entered (?)
+# - use Perl's Encode ($ man 3perl Encode) (?; for version 1.0.0)
 #
 # CHANGES:
+# * 2004-02-09 (later):
+#   - 0.69.0
+#   - external guess list (charsetwars.guess)
+#   - user command for adding guesses (/charsetwars_guess_add)
 # * 2004-02-09:
 #   - 0.68.0
 #   - added guess_wrong_charset() (detect wrong setting of enemy charset)
@@ -30,12 +36,12 @@ use Text::Iconv;
 use Data::Dumper;
 
 
-$VERSION = '0.68.0';
+$VERSION = '0.69.0';
 %IRSSI = (
     authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
     contact	=> 'spuk@ig.com.br',
     name	=> 'charsetwars',
-    description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) charset guessing (right now only utf8 <-> iso8859-1).',
+    description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
     license	=> 'Public Domain',
     url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
     changed	=> '2004-02-09',
@@ -72,16 +78,17 @@ Irssi::theme_register([
 'charsetwars_guess', 'Detected %_$0%_@%_$1%_ firing %_$2%_.',
 'charsetwars_guesses_head', '%_---%_ Guesses on $0 %_---%_',
 'charsetwars_guesses_body', '%_$1%_ matching /$2/',
-'charsetwars_guesses_foot', '%_---%_ End of guesses on $0 %_---%_'
+'charsetwars_guesses_foot', '%_---%_ End of guesses on $0 %_---%_',
+'charsetwars_guesses_add', 'Added guess for %_$1%_ on $0 matching /$2/.',
+'charsetwars_guesses_del', 'Removed guess for %_$1%_ on $0.',
 ]);
 
 
 # Regular expressions for guessing of charsets
 our %guesses = ();
 # own_charset => in_charset = "RE"
-# iso8859-1(����� == utf-8(á|é|í|ó|ú|ã|ç|à|ô|ê)
+# (these are only the "out-of-the-box" detected charsets)
 $guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
-# inverse of above (note they are the iso8859-1 char codes, as we'll get them, erroneous in utf8)
 $guesses{'utf-8'}{'iso8859-1'} = "����|�����";
 
 
@@ -101,6 +108,10 @@ our $own_charset = Irssi::settings_get_str('charsetwars_own');
 # filename for saving list of enemies
 our $valhalla = "charsetwars.list";
 
+# filename for saving list of guesses
+our $guessfile = "charsetwars.guess";
+
+
 
 sub cmd_charsetwars_help {
     my $help = "
@@ -112,10 +123,14 @@ Usage:
   /charsetwars_load                              - loads ".Irssi::get_irssi_dir()."/".$valhalla."
   /charsetwars_save                              - saves ".Irssi::get_irssi_dir()."/".$valhalla."
   /charsetwars_guess_show [THIS]                 - shows available guesses [for THIS charset] ***
+  /charsetwars_guess_add CHARSET CHARS           - adds guess for incoming CHARSET using CHARS ****
+  /charsetwars_guess_del CHARSET                 - dels guess for incoming CHARSET
 
-  *   any of NICK/CHANNEL IRCNET can be '*'
-  **  if not specified, IRCNET is '*' (i.e. all)
-  *** THIS defaults to charsetwars_own
+     * any of NICK/CHANNEL IRCNET can be '*'
+    ** IRCNET defaults to '*'
+   *** THIS defaults to charsetwars_own
+  **** CHARS is a regexp that should match characters you commonly see from people using CHARSET,
+       like á|é|ó|ã|õ for iso8859-1 (i.e., some characteres separated by |)
 
 Settings (and default values):
   charsetwars_autobury (ON)        - auto-save links (when Irssi saves settings)
@@ -148,6 +163,39 @@ sub cmd_guess_show {
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_foot', $this);
 }
 Irssi::command_bind('charsetwars_guess_show', 'cmd_guess_show', 'charsetwars.pl');
+
+
+sub cmd_guess_add {
+    my ($charset, $chars) = split(/ +/, $_[0]);
+    my $own_charset = Irssi::settings_get_str('charsetwars_own');
+
+    if (!$charset || !$chars) {
+        Irssi::print('[charsetwars.pl] Missing arguments. See /charsetwars_help for usage.', MSGLEVEL_CLIENTCRAP);
+        return;
+    }
+
+    $guesses{$charset}{$own_charset} = $chars;
+    $guesses{$own_charset}{$charset} = Text::Iconv->new($own_charset, $charset)->convert($chars);
+    Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_add', $own_charset, $charset, $chars);
+}
+Irssi::command_bind('charsetwars_guess_add', 'cmd_guess_add', 'charsetwars.pl');
+
+
+sub cmd_guess_del {
+    my ($charset) = split(/ +/, $_[0]);
+    my $own_charset = Irssi::settings_get_str('charsetwars_own');
+
+    if (!$charset) {
+        Irssi::print('[charsetwars.pl] Missing arguments. See /charsetwars_help for usage.', MSGLEVEL_CLIENTCRAP);
+        return;
+    }
+
+    my $chars = $guesses{$own_charset}{$charset};
+    delete($guesses{$own_charset}{$charset});
+    delete($guesses{$charset});
+    Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_del', $own_charset, $charset, $chars);
+}
+Irssi::command_bind('charsetwars_guess_del', 'cmd_guess_del', 'charsetwars.pl');
 
 
 # Adds a nick/channel -> charset link
@@ -220,6 +268,7 @@ sub bury_enemies {
 }
 sub auto_save {
     bury_enemies() if (Irssi::settings_get_bool('charsetwars_autosave'));
+    save_guesses() if (Irssi::settings_get_bool('charsetwars_autosave'));
 }
 Irssi::signal_add('setup saved', 'auto_save');
 Irssi::command_bind('charsetwars_save', 'bury_enemies', 'charsetwars.pl');
@@ -238,6 +287,34 @@ sub revive_enemies {
 Irssi::signal_add('setup reread', 'revive_enemies');
 Irssi::command_bind('charsetwars_load', 'revive_enemies', 'charsetwars.pl');
 revive_enemies();
+
+
+# Saves %guesses
+sub save_guesses {
+    my $cfgdir = Irssi::get_irssi_dir();
+    my $cfgdumper = Data::Dumper->new([\%guesses], ['*guesses']);
+    open(CFG, ">", $cfgdir."/".$guessfile);
+    print CFG $cfgdumper->Dump;
+    close(CFG);
+    Irssi::print('Guesses saved.');
+}
+Irssi::command_bind('charsetwars_guess_save', 'save_guesses', 'charsetwars.pl');
+
+
+# Loads %guesses
+sub load_guesses {
+    my $cfgdir = Irssi::get_irssi_dir();
+    my $cfg;
+    open(CFG, "<", $cfgdir."/".$guessfile);
+    while (<CFG>) { $cfg .= $_; }
+    eval $cfg;
+    close(CFG);
+    Irssi::print('Guesses loaded.');
+}
+Irssi::signal_add('setup reread', 'load_guesses');
+Irssi::command_bind('charsetwars_guess_load', 'load_guesses', 'charsetwars.pl');
+load_guesses();
+
 
 
 
