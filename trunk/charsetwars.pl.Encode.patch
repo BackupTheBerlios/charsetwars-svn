@@ -1,0 +1,133 @@
+--- charsetwars.pl.orig	2004-03-01 15:07:14.000000000 +0100
++++ charsetwars.pl	2004-12-21 00:10:24.000000000 +0100
+@@ -2,8 +2,6 @@
+ #
+ # Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
+ #
+-# Requires Text::Iconv (libtext-iconv-perl on Debian).
+-#
+ # Usage:
+ #   /charsetwars_help
+ 
+@@ -34,11 +32,12 @@
+ 
+ use Irssi;
+ 
+-use Text::Iconv;
++require v5.8;
++use Encode;
+ use Data::Dumper;
+ 
+ 
+-$VERSION = '0.69.1';
++$VERSION = '0.69.1bas';
+ %IRSSI = (
+     authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
+     contact	=> 'spuk@ig.com.br',
+@@ -91,18 +90,13 @@
+ # own_charset => in_charset = "RE"
+ # ("out-of-the-box" detected charsets)
+ $guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
+-$guesses{'utf-8'}{'iso8859-1'} = Text::Iconv->new('utf-8', 'iso8859-1')->convert($guesses{'iso8859-1'}{'utf-8'});
++$guesses{'utf-8'}{'iso8859-1'} = encode('iso8859-1', decode('utf-8', $guesses{'iso8859-1'}{'utf-8'}));
+ 
+ 
+ # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
+ our %enemies;
+ 
+ 
+-# "cache" converters
+-our %iconv_cache_in = ();
+-our %iconv_cache_out = ();
+-
+-
+ # Keep track of change
+ our $own_charset = Irssi::settings_get_str('charsetwars_own');
+ 
+@@ -177,7 +171,7 @@
+     }
+ 
+     $guesses{$charset}{$own_charset} = $chars;
+-    $guesses{$own_charset}{$charset} = Text::Iconv->new($own_charset, $charset)->convert($chars);
++    $guesses{$own_charset}{$charset} = encode($charset, decode($own_charset, $chars));
+     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_add', $own_charset, $charset, $chars);
+ }
+ Irssi::command_bind('charsetwars_guess_add', 'cmd_guess_add', 'charsetwars.pl');
+@@ -320,14 +314,6 @@
+ 
+ 
+ 
+-# Invalidate iconv_cache_{in,out}
+-sub invalidate_iconv_caches {
+-    %iconv_cache_in = ();
+-    %iconv_cache_out = ();
+-    $own_charset = Irssi::settings_get_str('charsetwars_own');
+-}
+-
+-
+ sub guess_charset {
+     my ($txt) = @_;
+ 
+@@ -386,31 +372,19 @@
+ 
+ sub convert_txt {
+     my ($in_out, $charset, $txt, $nick, $channel, $ircnet) = @_;
+-    my %cache;
+ 
+     if (!$txt) { return $txt; }
+-
+-    if ($in_out == 'in') {
+-        %cache = %iconv_cache_in;
+-    }
+-    elsif ($in_out == 'out') {
+-        %cache = %iconv_cache_out;
+-    }
+-
+-    my $iconv = $cache{$charset};
+-    if (!$iconv) {
+-        if ($in_out =~ 'in') {
+-            $iconv = Text::Iconv->new($charset, $own_charset);
+-        }
+-        elsif ($in_out =~ 'out') {
+-            $iconv = Text::Iconv->new($own_charset, $charset);
+-        }
+-        $iconv->raise_error(0);
+-        $cache{$charset} = $iconv;
++    my $txt_ret;
++    if ($in_out =~ 'in') {
++        $txt_ret = encode($own_charset, decode($charset, $txt));
++    }
++    elsif ($in_out =~ 'out') {
++        $txt_ret = encode($charset, decode($own_charset, $txt));
++    } 
++    else {
++        return $txt;
+     }
+ 
+-    my $txt_ret = $iconv->convert($txt);
+-
+     if (!$txt_ret
+         or (Irssi::settings_get_bool('charsetwars_wrong_guess') && guess_wrong_charset($charset, $txt))) {
+         Irssi::print("[charsetwars.pl:convert_txt()] Conversion error ($in_out, $charset, $txt, $nick, $channel, $ircnet)");
+@@ -447,8 +421,8 @@
+         return $txt;
+     }
+ 
+-    # user changed 'charsetwars_own', invalidate caches
+-    if ($own_charset !~ Irssi::settings_get_str('charsetwars_own')) { invalidate_iconv_caches(); }
++    # user changed 'charsetwars_own'
++    $own_charset = Irssi::settings_get_str('charsetwars_own'); 
+ 
+     return convert_txt('in', $in_charset, $txt, $nick, $channel, $ircnet);
+ }
+@@ -464,8 +438,8 @@
+         return $txt;
+     }
+ 
+-    # user changed 'charsetwars_own', invalidate caches
+-    if ($own_charset != Irssi::settings_get_str('charsetwars_own')) { invalidate_iconv_caches(); }
++    # user changed 'charsetwars_own'
++    $own_charset = Irssi::settings_get_str('charsetwars_own');
+ 
+     return convert_txt('out', $out_charset, $txt, $nick, $channel, $ircnet);
+ }

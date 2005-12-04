@@ -3,10 +3,6 @@
 #
 # Comments/bugs/improvements/suggestions welcome.
 #
-# Requires Text::Iconv (Debian's libtext-iconv-perl). According to Zrajm C
-# Akfohg, on Gentoo you also need to install Data::Dumper (Gentoo's
-# "dev-perl/Data-Dumper" and "dev-perl/Text-Iconv", then).
-#
 # Usage:
 #   /charsetwars_help
 #
@@ -21,7 +17,6 @@
 # - verify 'out' conversions
 # - numerate lists, and allow references to the indexes
 # - separate enemies list for guesses and user entered (?)
-# - use Perl's Encode ($ man 3perl Encode) (?)
 
 
 
@@ -30,19 +25,21 @@ use vars qw($VERSION %IRSSI);
 
 use Irssi;
 
-use Text::Iconv;
+require v5.8;
+
+use Encode;
 use Data::Dumper;
 
 
-$VERSION = '0.69.3';
+$VERSION = '0.69.4';
 %IRSSI = (
     authors	=> 'Gustavo De Nardin ("spuk")',
-    contact	=> 'spuk@ig.com.br',
+    contact	=> 'charsetwars.pl@spuk.ueberalles.net',
     name	=> 'charsetwars',
     description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
     license	=> 'Public Domain',
     url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
-    changed	=> '2004-02-09',
+    changed	=> '2005-11-22',
 );
 
 
@@ -87,16 +84,11 @@ our %guesses = ();
 # own_charset => in_charset = "RE"
 # ("out-of-the-box" detected charsets)
 $guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
-$guesses{'utf-8'}{'iso8859-1'} = Text::Iconv->new('utf-8', 'iso8859-1')->convert($guesses{'iso8859-1'}{'utf-8'});
+$guesses{'utf-8'}{'iso8859-1'} = encode('iso8859-1', decode('utf-8', $guesses{'iso8859-1'}{'utf-8'}));
 
 
 # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
 our %enemies;
-
-
-# "cache" converters
-our %iconv_cache_in = ();
-our %iconv_cache_out = ();
 
 
 # Keep track of change
@@ -173,7 +165,7 @@ sub cmd_guess_add {
     }
 
     $guesses{$charset}{$own_charset} = $chars;
-    $guesses{$own_charset}{$charset} = Text::Iconv->new($own_charset, $charset)->convert($chars);
+    $guesses{$own_charset}{$charset} = encode($charset, decode($own_charset, $chars));
     Irssi::printformat(MSGLEVEL_CLIENTCRAP, 'charsetwars_guesses_add', $own_charset, $charset, $chars);
 }
 Irssi::command_bind('charsetwars_guess_add', 'cmd_guess_add', 'charsetwars.pl');
@@ -316,14 +308,6 @@ load_guesses();
 
 
 
-# Invalidate iconv_cache_{in,out}
-sub invalidate_iconv_caches {
-    %iconv_cache_in = ();
-    %iconv_cache_out = ();
-    $own_charset = Irssi::settings_get_str('charsetwars_term');
-}
-
-
 sub guess_charset {
     my ($txt) = @_;
 
@@ -382,30 +366,19 @@ sub get_charset {
 
 sub convert_txt {
     my ($in_out, $charset, $txt, $nick, $channel, $ircnet) = @_;
-    my %cache;
 
     if (!$txt) { return $txt; }
 
-    if ($in_out == 'in') {
-        %cache = %iconv_cache_in;
+    my $txt_ret;
+    if ($in_out =~ 'in') {
+        $txt_ret = encode($own_charset, decode($charset, $txt));
     }
-    elsif ($in_out == 'out') {
-        %cache = %iconv_cache_out;
+    elsif ($in_out =~ 'out') {
+        $txt_ret = encode($charset, decode($own_charset, $txt));
     }
-
-    my $iconv = $cache{$charset};
-    if (!$iconv) {
-        if ($in_out =~ 'in') {
-            $iconv = Text::Iconv->new($charset, $own_charset);
-        }
-        elsif ($in_out =~ 'out') {
-            $iconv = Text::Iconv->new($own_charset, $charset);
-        }
-        $iconv->raise_error(0);
-        $cache{$charset} = $iconv;
+    else {
+        return $txt;
     }
-
-    my $txt_ret = $iconv->convert($txt);
 
     if (!$txt_ret
         or $in_out =~ 'in' && (Irssi::settings_get_bool('charsetwars_wrong_guess') && guess_wrong_charset($charset, $txt))) {
@@ -443,8 +416,8 @@ sub convert_in {
         return $txt;
     }
 
-    # user changed 'charsetwars_term', invalidate caches
-    if ($own_charset !~ Irssi::settings_get_str('charsetwars_term')) { invalidate_iconv_caches(); }
+    # user changed 'charsetwars_own'
+    $own_charset = Irssi::settings_get_str('charsetwars_own'); 
 
     return convert_txt('in', $in_charset, $txt, $nick, $channel, $ircnet);
 }
@@ -460,8 +433,8 @@ sub convert_out {
         return $txt;
     }
 
-    # user changed 'charsetwars_term', invalidate caches
-    if ($own_charset != Irssi::settings_get_str('charsetwars_term')) { invalidate_iconv_caches(); }
+    # user changed 'charsetwars_own'
+    $own_charset = Irssi::settings_get_str('charsetwars_own');
 
     return convert_txt('out', $out_charset, $txt, $nick, $channel, $ircnet);
 }
