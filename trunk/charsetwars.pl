@@ -5,7 +5,9 @@
 #
 # Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 #
-# Requires Text::Iconv (libtext-iconv-perl on Debian).
+# Requires Text::Iconv (Debian's libtext-iconv-perl). According to Zrajm C
+# Akfohg, on Gentoo you also need to install Data::Dumper (Gentoo's
+# "dev-perl/Data-Dumper" and "dev-perl/Text-Iconv", then).
 #
 # Usage:
 #   /charsetwars_help
