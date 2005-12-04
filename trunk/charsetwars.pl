@@ -30,7 +30,7 @@ use Data::Dumper;
 
 $VERSION = '0.69.X';
 %IRSSI = (
-    authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
+    authors	=> 'Gustavo De Nardin ("spuk")',
     contact	=> 'spuk@ig.com.br',
     name	=> 'charsetwars',
     description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
