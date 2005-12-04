@@ -16,24 +16,6 @@
 # - numerate lists, and allow references to the indexes
 # - separate enemies list for guesses and user entered (?)
 # - use Perl's Encode ($ man 3perl Encode) (?)
-#
-# CHANGES:
-# * 2004-02-14:
-#   - corrected bug calling guess_wrong_charset() for out messages
-#
-# * 2004-02-10:
-#   - 0.69.1
-#   - removed hardcoded iso8859-1 accented characters from %guesses initialization (they got messed up by the editor using utf-8)
-#
-# * 2004-02-09 (later):
-#   - 0.69.0
-#   - external guess list (charsetwars.guess)
-#   - user command for adding guesses (/charsetwars_guess_add)
-#
-# * 2004-02-09:
-#   - 0.68.0
-#   - added guess_wrong_charset() (detect wrong setting of enemy charset)
-#   - started this "changelog"
 
 
 
