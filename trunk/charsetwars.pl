@@ -416,8 +416,8 @@ sub convert_in {
         return $txt;
     }
 
-    # user changed 'charsetwars_own'
-    $own_charset = Irssi::settings_get_str('charsetwars_own'); 
+    # user changed 'charsetwars_term'
+    $own_charset = Irssi::settings_get_str('charsetwars_term'); 
 
     return convert_txt('in', $in_charset, $txt, $nick, $channel, $ircnet);
 }
@@ -433,8 +433,8 @@ sub convert_out {
         return $txt;
     }
 
-    # user changed 'charsetwars_own'
-    $own_charset = Irssi::settings_get_str('charsetwars_own');
+    # user changed 'charsetwars_term'
+    $own_charset = Irssi::settings_get_str('charsetwars_term');
 
     return convert_txt('out', $out_charset, $txt, $nick, $channel, $ircnet);
 }
