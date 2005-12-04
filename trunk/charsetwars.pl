@@ -14,7 +14,7 @@
 #   /script load charsetwars.pl
 #   /set charsetwars_term utf-8
 #
-# Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
+# See also <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 
 # TODO:
 # - change references for $channel to $target where it makes sense
