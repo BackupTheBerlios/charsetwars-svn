@@ -13,13 +13,18 @@
 # TODO:
 # - numerate lists, and allow references to the indexes
 # - separate enemies list for guesses and user entered (?)
-# - use Perl's Encode ($ man 3perl Encode) (?; for version 1.0.0)
+# - use Perl's Encode ($ man 3perl Encode) (?)
 #
 # CHANGES:
+# * 2004-02-10:
+#   - 0.69.1
+#   - removed hardcoded iso8859-1 accented characters from %guesses initialization (they got messed up by the editor using utf-8)
+#
 # * 2004-02-09 (later):
 #   - 0.69.0
 #   - external guess list (charsetwars.guess)
 #   - user command for adding guesses (/charsetwars_guess_add)
+#
 # * 2004-02-09:
 #   - 0.68.0
 #   - added guess_wrong_charset() (detect wrong setting of enemy charset)
@@ -36,7 +41,7 @@ use Text::Iconv;
 use Data::Dumper;
 
 
-$VERSION = '0.69.0';
+$VERSION = '0.69.1';
 %IRSSI = (
     authors	=> 'Gustavo De Nardin ("spuk"), with ideas from recode.pl (...), irssiq.pl (Data::Dumper), charconv.c (ircnet/channel/nick associations), others ...',
     contact	=> 'spuk@ig.com.br',
@@ -87,9 +92,9 @@ Irssi::theme_register([
 # Regular expressions for guessing of charsets
 our %guesses = ();
 # own_charset => in_charset = "RE"
-# (these are only the "out-of-the-box" detected charsets)
+# ("out-of-the-box" detected charsets)
 $guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
-$guesses{'utf-8'}{'iso8859-1'} = "����|�����";
+$guesses{'utf-8'}{'iso8859-1'} = Text::Iconv->new('utf-8', 'iso8859-1')->convert($guesses{'iso8859-1'}{'utf-8'});
 
 
 # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
@@ -129,8 +134,8 @@ Usage:
      * any of NICK/CHANNEL IRCNET can be '*'
     ** IRCNET defaults to '*'
    *** THIS defaults to charsetwars_own
-  **** CHARS is a regexp that should match characters you commonly see from people using CHARSET,
-       like á|é|ó|ã|õ for iso8859-1 (i.e., some characteres separated by |)
+  **** CHARS is a regexp that should match characters you commonly see from people using CHARSET
+       (i.e., like some non-ASCII characteres, each separated by |)
 
 Settings (and default values):
   charsetwars_autobury (ON)        - auto-save links (when Irssi saves settings)
