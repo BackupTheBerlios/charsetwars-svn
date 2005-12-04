@@ -12,7 +12,7 @@
 #
 # Simplest use case:
 #   /script load charsetwars.pl
-#   /set charsetwars_own utf-8
+#   /set charsetwars_term utf-8
 #
 # Look also at <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 
