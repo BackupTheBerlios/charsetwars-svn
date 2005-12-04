@@ -28,7 +28,7 @@ use Text::Iconv;
 use Data::Dumper;
 
 
-$VERSION = '0.69.X';
+$VERSION = '0.69.3';
 %IRSSI = (
     authors	=> 'Gustavo De Nardin ("spuk")',
     contact	=> 'spuk@ig.com.br',
