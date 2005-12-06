@@ -38,7 +38,7 @@ $VERSION = '0.69.4';
     description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
     license	=> 'Public Domain',
     url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
-    changed	=> '2005-11-22',
+    changed	=> '$Date$',
 );
 
 
