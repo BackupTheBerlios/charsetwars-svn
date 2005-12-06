@@ -7,7 +7,7 @@
 #
 # Simplest use case:
 #   /script load charsetwars.pl
-#   /set charsetwars_term utf-8
+#   /set charsetwars_term UTF-8
 #
 # See also <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 
@@ -35,7 +35,7 @@ $VERSION = '0.69.4';
     authors	=> 'Gustavo De Nardin ("spuk")',
     contact	=> 'charsetwars.pl@spuk.ueberalles.net',
     name	=> 'charsetwars',
-    description	=> 'Converts messages between charsets (utf-8 <=> iso8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
+    description	=> 'Converts messages between charsets (UTF-8 <=> ISO-8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
     license	=> 'Public Domain',
     url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
     changed	=> '$Date$',
@@ -52,7 +52,7 @@ Irssi::settings_add_bool("charsetwars.pl", "charsetwars_convert_out", 0);
 Irssi::settings_add_str("charsetwars.pl", "charsetwars_default_in", "AS_IS");
 Irssi::settings_add_str("charsetwars.pl", "charsetwars_default_out", "AS_IS");
 # The charset you're using
-Irssi::settings_add_str("charsetwars.pl", "charsetwars_term", "iso8859-1");
+Irssi::settings_add_str("charsetwars.pl", "charsetwars_term", "ISO-8859-1");
 # Guessing of incoming message charset
 Irssi::settings_add_bool("charsetwars.pl", "charsetwars_guess_in", 1);
 # Guessing of wrong charset in messages
@@ -82,8 +82,8 @@ Irssi::theme_register([
 our %guesses = ();
 # own_charset => in_charset = "RE"
 # ("out-of-the-box" detected charsets)
-$guesses{'iso8859-1'}{'utf-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
-$guesses{'utf-8'}{'iso8859-1'} = encode('iso8859-1', decode('utf-8', $guesses{'iso8859-1'}{'utf-8'}));
+$guesses{'ISO-8859-1'}{'UTF-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
+$guesses{'UTF-8'}{'ISO-8859-1'} = encode('ISO-8859-1', decode('UTF-8', $guesses{'ISO-8859-1'}{'UTF-8'}));
 
 
 # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
@@ -123,11 +123,11 @@ Usage:
 
 Settings (and default values):
   charsetwars_autobury (ON)        - auto-save links (when Irssi saves settings)
-  charsetwars_term (iso8859-1)     - your charset (this can\'t be autodetected)
+  charsetwars_term (ISO-8859-1)    - your charset (currently this can\'t be autodetected)
   charsetwars_convert_in (ON)      - convert incoming messages
   charsetwars_convert_out (OFF)    - convert outgoing messages
   charsetwars_guess_in (ON)        - try to guess charset of incoming messages
-  charsetwars_wrong_guess (ON)     - try to detect wrong charset in messages (like one using UTF-8 but set as ISO8859-1)
+  charsetwars_wrong_guess (ON)     - try to detect wrong charset in messages (like one using UTF-8 but set as ISO-8859-1)
   charsetwars_guess_ln (ON)        - do charsetwars_ln on guesses
   charsetwars_default_in (AS_IS)   - default \'in\' charset (AS_IS == no conversion)
   charsetwars_default_out (AS_IS)  - default \'out\' charset (AS_IS == no conversion)
