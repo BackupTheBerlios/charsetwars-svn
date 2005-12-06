@@ -1,7 +1,6 @@
-# Don't touch the next line (arch-tag:), it's an Arch ID tagline.
-#arch-tag: Gustavo De Nardin <nardin@inf.ufsc.br> Sun Nov 28 02:41:14 2004 26963.0
-#
-# Comments/bugs/improvements/suggestions welcome.
+# Comments/bugs/improvements/suggestions welcome at
+# <mailto:charsetwars$spuk,ueberalles,net>. (Refer to 'Irssi' and/or
+# 'charsetwars' somewhere in the subject, please.)
 #
 # Usage:
 #   /charsetwars_help
