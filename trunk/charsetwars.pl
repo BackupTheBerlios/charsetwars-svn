@@ -34,12 +34,12 @@ use Data::Dumper;
 
 $VERSION = '0.69.4';
 %IRSSI = (
-    authors	=> 'Gustavo De Nardin ("spuk")',
-    contact	=> 'charsetwars.pl@spuk.ueberalles.net',
+    authors	=> 'Gustavo De Nardin (spuk)',
+    contact	=> 'charsetwars$spuk,ueberalles,net',
     name	=> 'charsetwars',
     description	=> 'Converts messages between charsets (UTF-8 <=> ISO-8859-1, etc.) by nick/channel/ircnet. With "dumb" (regexp) guessing for any charset (user configured).',
     license	=> 'Public Domain',
-    url		=> 'http://www.inf.ufsc.br/~nardin/irssi/',
+    url		=> 'http://charsetwars.berlios.de/',
     changed	=> '$Date$',
 );
 
