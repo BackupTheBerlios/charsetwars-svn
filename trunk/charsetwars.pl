@@ -10,6 +10,7 @@
 #   /set charsetwars_term UTF-8
 #
 # See also <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
+# See also /help recode (Irssi 0.8.10).
 
 # TODO:
 # - convert topics, actions, etc. (maybe document what is not converted and why)
