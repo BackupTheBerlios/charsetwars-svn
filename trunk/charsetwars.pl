@@ -12,6 +12,7 @@
 # See also <http://norpan.org/charconv.c> (listed on <http://www.irssi.org/?page=plugins>).
 
 # TODO:
+# - convert topics, actions, etc. (maybe document what is not converted and why)
 # - change references for $channel to $target where it makes sense
 # - verify 'out' conversions
 # - numerate lists, and allow references to the indexes
