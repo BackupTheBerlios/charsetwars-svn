@@ -13,6 +13,7 @@
 # See also /help recode (Irssi 0.8.10).
 
 # TODO:
+# - commands error messages should show the command args, instead of just complaining
 # - convert topics, actions, etc. (maybe document what is not converted and why)
 # - change references for $channel to $target where it makes sense
 # - verify 'out' conversions
