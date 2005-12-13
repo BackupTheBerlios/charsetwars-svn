@@ -25,7 +25,7 @@ sub ignoramus {
   my $host = $witem->{server}->{userhost};
   my $channel = $witem->{name};
 
-  if ($witem->{server}->ignore_check($witem->{server}->{nick}, $host, $channel, $line, MSGLEVEL_PUBLIC+MSGLEVEL_MSGS)) {
+  if ($witem->{server}->ignore_check($nick, $host, $channel, $line, MSGLEVEL_PUBLIC+MSGLEVEL_MSGS)) {
     Irssi::signal_stop();
   }
 }
