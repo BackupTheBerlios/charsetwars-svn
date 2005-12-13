@@ -1,3 +1,11 @@
+#
+# Ignoramus - nobody loves you, nobody wanna listen
+#
+# TODO:
+# - option to warn when ignored yourself
+# - option to disable ignore entry hit if same line retried N times on same item consecutively
+
+
 use Irssi;
 use strict;
 use vars qw($VERSION %IRSSI);
