@@ -83,10 +83,10 @@ Irssi::theme_register([
 
 # Regular expressions for guessing of charsets
 our %guesses = ();
-# own_charset => in_charset = "RE"
+# terminal_charset => otherpeople_charset = Regexp_of_otherpeople_locale_chars_for_detection
 # ("out-of-the-box" detected charsets)
-$guesses{'ISO-8859-1'}{'UTF-8'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
-$guesses{'UTF-8'}{'ISO-8859-1'} = encode('ISO-8859-1', decode('UTF-8', $guesses{'ISO-8859-1'}{'UTF-8'}));
+$guesses{'UTF-8'}{'ISO-8859-1'} = "á|é|í|ó|ú|ã|ç|à|ô|ê";
+$guesses{'ISO-8859-1'}{'UTF-8'} = encode('UTF-8', decode('ISO-8859-1', $guesses{'UTF-8'}{'ISO-8859-1'}));
 
 
 # hash of hashes: $enemies{$ircnet}{$nickchan} = $charset
